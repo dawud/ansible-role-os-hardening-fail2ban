@@ -1,0 +1,193 @@
+---
+# Requires EPEL
+# https://access.redhat.com/solutions/267483
+- name: Add or remove Fail2ban packages based on STIG requirements
+  yum:
+    # yamllint disable-line
+    name: "{{ stig_packages_rhel7 | selectattr('enabled') | selectattr('state', 'equalto', item) | sum(attribute='packages', start=[]) }}"
+    state: "{{ item }}"
+    enablerepo: rhel-7-server-optional-rpms,epel
+  with_items:
+    # yamllint disable-line
+    - "{{ stig_packages_rhel7 | selectattr('enabled') | map(attribute='state') | unique | list }}"
+  notify: yum-clean-metadata
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - auth
+    - packages
+    - services
+    - V-71897
+    - V-71967
+    - V-71969
+    - V-72067
+    - V-72077
+    - V-72213
+    - V-72233
+    - V-72301
+    - V-72307
+
+- name: Configure fail2ban
+  template:
+    src: 'fail2ban.local.j2'
+    dest: '/etc/fail2ban/fail2ban.local'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+    seuser: system_u
+    serole: object_r
+    setype: etc_t
+    selevel: s0
+  notify: ['Restart fail2ban']
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Configure custom fail2ban actions
+  template:
+    src: 'action.local.j2'
+    dest: '/etc/fail2ban/action.d/{{ item.filename | d(item.name) }}.local'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+    seuser: system_u
+    serole: object_r
+    setype: etc_t
+    selevel: s0
+  with_items: '{{ security_rhel7_fail2ban_actions }}'
+  notify: ['Restart fail2ban']
+  when: ((item.name is defined and item.name | bool) and
+         (item.ban is defined and item.ban | bool) and
+         (item.state | d('present') not in ['absent']))
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Remove custom fail2ban actions if requested
+  file:
+    path: '/etc/fail2ban/action.d/{{ item.filename | d(item.name) }}.local'
+    state: 'absent'
+  with_items: '{{ security_rhel7_fail2ban_actions }}'
+  notify: ['Restart fail2ban']
+  when: ((item.name is defined and item.name | bool) and
+         (item.state | d('present') in ['absent']))
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Configure custom fail2ban filters
+  template:
+    src: 'filter.local.j2'
+    dest: '/etc/fail2ban/filter.d/{{ item.filename | d(item.name) }}.local'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+    seuser: system_u
+    serole: object_r
+    setype: etc_t
+    selevel: s0
+  with_items: '{{ security_rhel7_fail2ban_filters }}'
+  notify: ['Restart fail2ban']
+  when: ((item.name is defined and item.name | bool) and
+         (item.failregex is defined and item.failregex | bool) and
+         (item.state | d('present') not in ['absent']))
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Remove custom fail2ban filters if requested
+  file:
+    path: '/etc/fail2ban/filter.d/{{ item.filename | d(item.name) }}.local'
+    state: 'absent'
+  with_items: '{{ security_rhel7_fail2ban_filters }}'
+  notify: ['Restart fail2ban']
+  when: ((item.name is defined and item.name | bool) and
+         (item.state | d('present') in ['absent']))
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Configure jail default variables
+  template:
+    src: '00-default.local.j2'
+    dest: '/etc/fail2ban/jail.d/00-default.local'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+    seuser: system_u
+    serole: object_r
+    setype: etc_t
+    selevel: s0
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Configure fail2ban jails
+  template:
+    src: 'jail.local.j2'
+    dest: '/etc/fail2ban/jail.d/{{ item.filename | d(item.name) }}.local'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+    seuser: system_u
+    serole: object_r
+    setype: etc_t
+    selevel: s0
+  with_items:
+    - "{{ security_rhel7_fail2ban_jails }}"
+  when: ((item.name is defined and item.name) and
+         (item.delete is undefined or not item.delete))
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Remove fail2ban jails if requested
+  file:
+    path: '/etc/fail2ban/jail.d/{{ item.filename | d(item.name) }}.local'
+    state: 'absent'
+  loop:
+    - "{{ security_rhel7_fail2ban_jails }}"
+  when: ((item.name is defined and item.name | bool) and
+         (item.delete is defined and item.delete))
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services
+
+- name: Configuring service
+  systemd:
+    name: fail2ban
+    state: "{{ security_rhel7_fail2ban_service_state }}"
+    enabled: "{{ security_rhel7_fail2ban_service_enabled }}"
+  when: ansible_virtualization_type != 'docker'
+  tags:
+    - cat1
+    - system
+    - networking
+    - fail2ban
+    - services

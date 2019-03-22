@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+
+[Definition]
+
+actionstart    = {{ item.start | d('') }}
+actionstop     = {{ item.stop | d('') }}
+actioncheck    = {{ item.check | d('') }}
+actionban      = {{ item.ban }}
+actionunban    = {{ item.unban | d('') }}

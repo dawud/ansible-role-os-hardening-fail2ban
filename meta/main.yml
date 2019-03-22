@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  author: David Sastre Medina <david.sastre@redhat.com>
+  description: Fail2ban IPS installation and configuration
+  company: Red Hat
+  license: GPLv3
+  min_ansible_version: 2.6
+  platforms:
+    - name: Red Hat
+      versions:
+        - 7
+  galaxy_tags:
+    - IPS
+    - hardening
+    - rhel7
+    - PCI-DSS
+    - STIG
+dependencies:
+    - os-epel

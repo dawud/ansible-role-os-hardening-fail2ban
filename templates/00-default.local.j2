@@ -1,0 +1,28 @@
+# {{ ansible_managed }}
+#
+# added for RHEL STIG V-38501 (bantime control)
+
+[DEFAULT]
+
+ignoreip       = {{ (security_rhel7_fail2ban_ignoreip_default|d([]) + security_rhel7_fail2ban_ignoreip|d([])) | join(" ") }}
+bantime        = {{ security_rhel7_fail2ban_bantime }}
+findtime       = {{ security_rhel7_fail2ban_findtime }}
+maxretry       = {{ security_rhel7_fail2ban_maxretry }}
+destemail      = {{ security_rhel7_fail2ban_destemail }}
+mta            = {{ security_rhel7_fail2ban_mta }}
+protocol       = {{ security_rhel7_fail2ban_protocol }}
+chain          = {{ security_rhel7_fail2ban_chain }}
+
+{% if security_rhel7_fail2ban_default_actions is defined and security_rhel7_fail2ban_default_actions %}
+{% for name, commands in security_rhel7_fail2ban_default_actions.iteritems() %}
+{{ "%-14s" | format(name) }} = {{ commands | indent(17) }}
+
+{% endfor %}
+{% endif %}
+{% if security_rhel7_fail2ban_custom_actions is defined and security_rhel7_fail2ban_custom_actions %}
+{% for name, commands in security_rhel7_fail2ban_custom_actions.iteritems() %}
+{{ "%-14s" | format(name) }} = {{ commands | indent(17) }}
+
+{% endfor %}
+{% endif %}
+action         = {{ "%(" + security_rhel7_fail2ban_action + ")s" }}

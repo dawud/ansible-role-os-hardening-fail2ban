@@ -1,0 +1,16 @@
+---
+- name: yum-clean-metadata
+  command: yum clean metadata
+  args:
+    warn: 'no'
+
+- name: Restart fail2ban
+  systemd:
+    name: 'fail2ban'
+    state: 'restarted'
+  when: ansible_virtualization_type != 'docker'
+
+# Unused at the moment
+- name: Reload fail2ban jails
+  # yamllint disable-line rule:line-length
+  shell: type fail2ban-server > /dev/null && (fail2ban-client ping > /dev/null && fail2ban-client reload > /dev/null || true) || true

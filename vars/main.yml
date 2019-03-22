@@ -1,0 +1,21 @@
+---
+# RHEL 7 STIG: Packages to add/remove
+stig_packages_rhel7:
+  - packages:
+      - fail2ban
+      - fail2ban-firewalld
+      - fail2ban-hostsdeny
+      - fail2ban-mail
+      - fail2ban-sendmail
+      - fail2ban-server
+      - fail2ban-systemd
+      - whois
+    state: "{{ security_package_state }}"
+    enabled: 'True'
+
+# Local actions
+fail2ban_actions: "{{ security_rhel7_fail2ban_actions }}"
+# Local filters
+fail2ban_filters: "{{ security_rhel7_fail2ban_filters }}"
+# Local jails
+fail2ban_jails: "{{ security_rhel7_fail2ban_jails }}"

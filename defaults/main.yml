@@ -1,0 +1,100 @@
+---
+## Fail2ban IDS
+# Set the package install state for distribution packages
+# Options are 'present' and 'latest'
+security_package_state: present
+# start on boot
+security_rhel7_fail2ban_service_enabled: 'yes'
+# current state: started, stopped
+security_rhel7_fail2ban_service_state: started
+
+## src:  `/etc/fail2ban/fail2ban.local.j2`
+## dest: `/etc/fail2ban/fail2ban.local`
+# Log verbosity
+# valid values : CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG. Default: ERROR
+security_rhel7_fail2ban_loglevel: 'WARNING'
+# Where to save logs: a file, ``STDOUT``, ``STDERR``, ``SYSLOG``
+security_rhel7_fail2ban_logtarget: '/var/log/fail2ban.log'
+# The following value increases the default dbpurgeage defined in fail2ban.conf
+# to e.g. 648000 (7.5 days) to maintain entries for failed logins for sufficient
+# amount of time so that the 'recidive' jail for more extended banning of
+# persistent abusers can be used.
+# Make sure that your loglevel specified in fail2ban.local (above)
+# is not at DEBUG level -- which might then cause fail2ban to fall into
+# an infinite loop constantly feeding itself with non-informative lines
+security_rhel7_fail2ban_dbpurgeage: '648000'
+
+## src:  `/etc/fail2ban/jail.d/default.local.j2`
+## dest: `/etc/fail2ban/jail.d/00-default.local`
+# List of default IP addresses or CIDR networks which should be ignored by
+# fail2ban
+security_rhel7_fail2ban_ignoreip_default: ['127.0.0.0/8']
+# List of IP addresses or CIDR networks which should be ignored by fail2ban
+security_rhel7_fail2ban_ignoreip: []
+# Length of time in seconds for the ban to persist (by default, 2 hours)
+security_rhel7_fail2ban_bantime: '{{ (60 * 60 * 2) }}'
+# Length of time in seconds between bad login attempts to consider for banning
+# (by default, 10 minutes)
+security_rhel7_fail2ban_findtime: '{{ (60 * 10) }}'
+# Maximum number of bad login attempts in the given ``findtime`` to trigger
+# a ban
+security_rhel7_fail2ban_maxretry: '3'
+# Recipient address of e-mail notifications
+security_rhel7_fail2ban_destemail: 'fail2ban@{{ ansible_domain }}'
+# Default mail notification method
+security_rhel7_fail2ban_mta: 'sendmail'
+# fail2ban_banaction: iptables-multiport
+# Protocol type to filter in ``iptables``: ``tcp``, ``udp``, ``icmp``, ``all``
+security_rhel7_fail2ban_protocol: 'tcp'
+# `iptables` chain to add the rules in
+security_rhel7_fail2ban_chain: 'INPUT'
+# Action performed by ``fail2ban`` when IP address is banned. See list of
+# default actions below.
+security_rhel7_fail2ban_action: 'action_'
+# Dict with set of named actions to perform when a ban is executed.
+# Example:
+# yamllint disable rule:line-length
+# security_rhel7_fail2ban_default_actions:
+#   # Block an IP address in the firewall
+#   'action_': |
+#     %(banaction)s[name=%(__name__)s, port="%(port)s", protocol="%(protocol)s", chain="%(chain)s", position="%(position)s", bantime="%(bantime)s"]
+#   # Block an IP address in the firewall and send a notification about the
+#   # offender taken from ``whois``
+#   'action_mw': |
+#     %(banaction)s[name=%(__name__)s, port="%(port)s", protocol="%(protocol)s", chain="%(chain)s", position="%(position)s", bantime="%(bantime)s"]
+#     %(mta)s-whois[name=%(__name__)s, dest="%(destemail)s", protocol="%(protocol)s", chain="%(chain)s"]
+#   # Block an IP address in the firewall and send a notification about the
+#   # offender taken from ``whois`` and relevant log entries
+#   # yamllint disable-line rule:line-length
+#   'action_mwl': |
+#     %(banaction)s[name=%(__name__)s, port="%(port)s", protocol="%(protocol)s", chain="%(chain)s", position="%(position)s", bantime="%(bantime)s"]
+#     %(mta)s-whois-lines[name=%(__name__)s, dest="%(destemail)s", logpath=%(logpath)s, chain="%(chain)s"]
+# yamllint enable rule:line-length
+security_rhel7_fail2ban_default_actions: {}
+# Dict with custom set of named actions to perform when a ban is executed.
+security_rhel7_fail2ban_custom_actions: {}
+
+## src:  `/etc/fail2ban/action.d/action.local.j2`
+## dest: `/etc/fail2ban/action.d/{{ item.filename }}.local`
+# List of dicts which define custom local ``fail2ban`` actions.
+security_rhel7_fail2ban_actions: []
+
+## src:  `/etc/fail2ban/filter.d/filter.local.j2`
+## dest: `/etc/fail2ban/filter.d/{{ item.filename }}.local`
+# List of dicts which define custom local ``fail2ban`` filters.
+security_rhel7_fail2ban_filters: []
+
+## src:  `/etc/fail2ban/jail.d/jail.local.j2`
+## dest: `/etc/fail2ban/jail.d/{{ item.filename }}.local`
+# List of dicts which define ``fail2ban`` jails.
+security_rhel7_fail2ban_jails:
+  - name: 'sshd'
+    enabled: 'true'
+  - name: 'sshd-ddos'
+    enabled: 'true'
+  - name: 'selinux-ssh'
+    enabled: 'true'
+  - name: 'recidive'
+    enabled: 'true'
+  - name: 'pam-generic'
+    enabled: 'true'

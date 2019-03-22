@@ -1,0 +1,70 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: delegated
+  options:
+    login_cmd_template: 'bash'
+    ansible_connection_options:
+      connection: local
+platforms:
+  - name: localhost
+lint:
+  name: yamllint
+provisioner:
+  name: ansible
+  env:
+    MOLECULE_DEBUG: 'False'
+    #  options:
+    #    vvv: 'True'
+  playbooks:
+    converge: playbook.yml
+  config_options:
+    defaults:
+      retry_files_enabled: 'False'
+      ansible_connection: local
+  inventory:
+    host_vars:
+      localhost:
+        security_rhel7_fail2ban_ignoreip: ['192.168.0.0/24']
+        security_rhel7_fail2ban_bantime: '{{ (60 * 60 * 4) }}'
+        security_rhel7_fail2ban_findtime: '{{ (60 * 5) }}'
+        security_rhel7_fail2ban_maxretry: '5'
+        security_rhel7_fail2ban_destemail: 'fail2ban@molecule.test'
+        security_rhel7_fail2ban_actions:
+          - name: 'molecule'
+            ban: '/bin/ban'
+            check: '/bin/check'
+            filename: '99-molecule'
+            start: '/bin/start'
+            state: 'present'
+            stop: '/bin/stop'
+            unban: '/bin/unban'
+        security_rhel7_fail2ban_filters:
+          - name: 'molecule'
+            after: '/foo/after'
+            before: '/foo/before'
+            failregex: 'azerty.*'
+            filename: '99-molecule'
+            ignoreregex: 'qwerty.*'
+            state: 'present'
+        security_rhel7_fail2ban_jails:
+          - name: 'sshd'
+            enabled: 'true'
+          - name: 'selinux-ssh'
+            enabled: 'true'
+          - name: 'recidive'
+            enabled: 'true'
+          - name: 'pam-generic'
+            enabled: 'true'
+  lint:
+    name: ansible-lint
+scenario:
+  name: default
+verifier:
+  name: testinfra
+  options:
+    verbose: true
+    connection: local
+  lint:
+    name: flake8
